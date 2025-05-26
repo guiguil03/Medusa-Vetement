@@ -1,4 +1,5 @@
 import * as React from "react"
+import { HttpTypes } from "@medusajs/types"
 import { listRegions } from "@lib/data/regions"
 import { SearchField } from "@/components/SearchField"
 import { Layout, LayoutColumn } from "@/components/Layout"
@@ -20,18 +21,33 @@ const CartDrawer = dynamic(
 )
 
 export const Header: React.FC = async () => {
-  const regions = await listRegions()
-
-  const countryOptions = regions
-    .map((r) => {
-      return (r.countries ?? []).map((c) => ({
-        country: c.iso_2,
-        region: r.id,
-        label: c.display_name,
-      }))
-    })
-    .flat()
-    .sort((a, b) => (a?.label ?? "").localeCompare(b?.label ?? ""))
+  // Récupérer les régions et gérer les erreurs
+  let regions: HttpTypes.StoreRegion[] = []
+  let countryOptions: Array<{ country: string; region: string; label: string }> = []
+  
+  try {
+    regions = await listRegions()
+    
+    countryOptions = regions
+      .map((r: HttpTypes.StoreRegion) => {
+        return (r.countries ?? []).map((c: HttpTypes.StoreRegionCountry) => ({
+          country: c.iso_2 || "",  // Garantir que country n'est jamais undefined
+          region: r.id,
+          label: c.display_name || "",  // Garantir que label n'est jamais undefined
+        }))
+      })
+      .flat()
+      .sort((a, b) => (a.label).localeCompare(b.label))
+  } catch (error) {
+    console.error("Erreur lors de la récupération des régions:", error)
+    // Utiliser des options par défaut en cas d'erreur
+    countryOptions = [
+      { country: "fr", region: "reg_france", label: "France" },
+      { country: "us", region: "reg_usa", label: "United States" },
+      { country: "at", region: "reg_austria", label: "Austria" },
+      { country: "au", region: "reg_australia", label: "Australia" }
+    ]
+  }
 
   return (
     <>

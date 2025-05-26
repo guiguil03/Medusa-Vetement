@@ -1,5 +1,4 @@
 import { HttpTypes } from "@medusajs/types"
-import { notFound } from "next/navigation"
 import { NextRequest, NextResponse } from "next/server"
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL
@@ -19,27 +18,98 @@ async function getRegionMap() {
     regionMapUpdated < Date.now() - 3600 * 1000
   ) {
     console.log({ PUBLISHABLE_API_KEY })
-    // Fetch regions from Medusa. We can't use the JS client here because middleware is running on Edge and the client needs a Node environment.
-    const { regions } = await fetch(`${BACKEND_URL}/store/regions`, {
-      headers: {
-        "x-publishable-api-key": PUBLISHABLE_API_KEY!,
-      },
-      next: {
-        revalidate: 3600,
-        tags: ["regions"],
-      },
-    }).then((res) => res.json())
+    // Déclarer response en dehors du bloc try pour qu'il soit accessible partout
+    let response: { regions?: HttpTypes.StoreRegion[] } = {};
+    
+    try {
+      // Fetch regions from Medusa. We can't use the JS client here because middleware is running on Edge and the client needs a Node environment.
+      response = await fetch(`${BACKEND_URL}/store/regions`, {
+        headers: {
+          "x-publishable-api-key": PUBLISHABLE_API_KEY!,
+        },
+        next: {
+          revalidate: 3600,
+          tags: ["regions"],
+        },
+      }).then((res) => res.json())
+      
+      const regions = response.regions
 
-    if (!regions?.length) {
-      notFound()
+      if (!regions?.length) {
+        // Utiliser des régions par défaut si aucune région n'est trouvée
+        console.warn("No regions found in Medusa, using default regions")
+        const defaultRegions = [
+          {
+            id: "reg_france",
+            name: "France",
+            currency_code: "eur",
+            countries: [{ id: "fr", iso_2: "fr", display_name: "France" }],
+          },
+          {
+            id: "reg_usa",
+            name: "United States",
+            currency_code: "usd",
+            countries: [{ id: "us", iso_2: "us", display_name: "United States" }],
+          },
+          {
+            id: "reg_australia",
+            name: "Australia",
+            currency_code: "aud",
+            countries: [{ id: "au", iso_2: "au", display_name: "Australia" }],
+          },
+          {
+            id: "reg_austria",
+            name: "Austria",
+            currency_code: "eur",
+            countries: [{ id: "at", iso_2: "at", display_name: "Austria" }],
+          },
+        ]
+        
+        defaultRegions.forEach((region) => {
+          region.countries?.forEach((c) => {
+            regionMapCache.regionMap.set(c.iso_2 ?? "", region)
+          })
+        })
+        
+        regionMapCache.regionMapUpdated = Date.now()
+        return regionMapCache.regionMap
+      }
+    } catch (error) {
+      console.error("Error fetching regions:", error)
+      // En cas d'erreur, utiliser les régions par défaut
+      const defaultRegions = [
+        {
+          id: "reg_france",
+          name: "France",
+          currency_code: "eur",
+          countries: [{ id: "fr", iso_2: "fr", display_name: "France" }],
+        },
+        {
+          id: "reg_usa",
+          name: "United States",
+          currency_code: "usd",
+          countries: [{ id: "us", iso_2: "us", display_name: "United States" }],
+        },
+      ]
+      
+      defaultRegions.forEach((region) => {
+        region.countries?.forEach((c) => {
+          regionMapCache.regionMap.set(c.iso_2 ?? "", region)
+        })
+      })
+      
+      regionMapCache.regionMapUpdated = Date.now()
+      return regionMapCache.regionMap
     }
 
     // Create a map of country codes to regions.
-    regions.forEach((region: HttpTypes.StoreRegion) => {
-      region.countries?.forEach((c) => {
-        regionMapCache.regionMap.set(c.iso_2 ?? "", region)
+    if (response && response.regions) {
+      response.regions.forEach((region: HttpTypes.StoreRegion) => {
+        region.countries?.forEach((c) => {
+          regionMapCache.regionMap.set(c.iso_2 ?? "", region)
+        })
       })
-    })
+    }
 
     regionMapCache.regionMapUpdated = Date.now()
   }

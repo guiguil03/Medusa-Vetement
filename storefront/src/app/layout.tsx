@@ -21,7 +21,7 @@ const monaSans = Mona_Sans({
 export default function RootLayout(props: { children: React.ReactNode }) {
   return (
     <html lang="en" data-mode="light" className="antialiased">
-      <body className={`${monaSans.className}`}>
+      <body className={`${monaSans.className}`} suppressHydrationWarning={true}>
         <main className="relative">{props.children}</main>
         <SpeedInsights />
       </body>
