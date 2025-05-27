@@ -36,7 +36,7 @@
     "awilix": "^8.0.1",
     "fashion-starter-medusa": "file:",
     "lodash": "^4.17.21",
-    "meilisearch": "0.47.0",
+    "meilisearch": "^0.47.0",
     "pg": "^8.13.3",
     "react-dropzone": "^14.3.8",
     "resend": "^4.1.2",

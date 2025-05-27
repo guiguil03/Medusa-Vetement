@@ -2,6 +2,7 @@ import { Metadata } from "next"
 
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 import StoreTemplate from "@modules/store/templates"
+import ForceRefresh from "@/components/ForceRefresh"
 
 export const metadata: Metadata = {
   title: "Store",
@@ -26,21 +27,24 @@ export default async function StorePage({ searchParams, params }: Params) {
   const { sortBy, page, collection, category, type } = await searchParams
 
   return (
-    <StoreTemplate
-      sortBy={sortBy}
-      page={page}
-      countryCode={countryCode}
-      collection={
-        !collection
-          ? undefined
-          : Array.isArray(collection)
-            ? collection
-            : [collection]
-      }
-      category={
-        !category ? undefined : Array.isArray(category) ? category : [category]
-      }
-      type={!type ? undefined : Array.isArray(type) ? type : [type]}
-    />
+    <>
+      <StoreTemplate
+        sortBy={sortBy}
+        page={page}
+        countryCode={countryCode}
+        collection={
+          !collection
+            ? undefined
+            : Array.isArray(collection)
+              ? collection
+              : [collection]
+        }
+        category={
+          !category ? undefined : Array.isArray(category) ? category : [category]
+        }
+        type={!type ? undefined : Array.isArray(type) ? type : [type]}
+      />
+      <ForceRefresh />
+    </>  
   )
 }

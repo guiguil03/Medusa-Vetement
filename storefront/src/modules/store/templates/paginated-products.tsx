@@ -81,6 +81,11 @@ function PaginatedProducts({
   if (productsQuery.isPending) {
     return <SkeletonProductGrid />
   }
+  
+  // Gérer les erreurs de requête
+  if (productsQuery.isError) {
+    return <NoResults error={productsQuery.error?.message || "Erreur de chargement des produits"} />
+  }
 
   return (
     <>

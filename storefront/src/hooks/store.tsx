@@ -18,12 +18,27 @@ export const useStoreProducts = ({
     initialPageParam: page,
     queryKey: ["products", queryParams, sortBy, countryCode],
     queryFn: async ({ pageParam }) => {
-      return getProductsListWithSort({
+      console.log("Fetching products with params:", {
         page: pageParam,
         queryParams,
         sortBy,
         countryCode,
       })
+      
+      try {
+        const result = await getProductsListWithSort({
+          page: pageParam,
+          queryParams,
+          sortBy,
+          countryCode,
+        })
+        
+        console.log(`Products fetched: ${result.response.products.length}`)
+        return result
+      } catch (error) {
+        console.error("Error fetching products:", error)
+        throw error
+      }
     },
     getNextPageParam: (lastPage: {
       response: { products: HttpTypes.StoreProduct[]; count: number }
